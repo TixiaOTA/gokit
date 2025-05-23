@@ -3,7 +3,7 @@ package abstract
 import (
 	"context"
 
-	"github.com/vizucode/gokit/types"
+	"github.com/TixiaOTA/gokit/types"
 )
 
 // Publisher message broker want to publish their message

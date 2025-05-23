@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/vizucode/gokit/factory"
+	"github.com/TixiaOTA/gokit/factory"
 )
 
 // server an instance for running services with factory.ApplicationFactory

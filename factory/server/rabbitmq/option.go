@@ -1,6 +1,6 @@
 package rabbitmq
 
-import "github.com/vizucode/gokit/utils/env"
+import "github.com/TixiaOTA/gokit/utils/env"
 
 type option struct {
 	exchangeName  string

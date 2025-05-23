@@ -1,4 +1,4 @@
-module github.com/vizucode/gokit
+module github.com/TixiaOTA/gokit
 
 go 1.23.0
 
