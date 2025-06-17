@@ -22,10 +22,12 @@ func Config(configPath string) {
 	viper.AutomaticEnv()
 	viper.AddConfigPath(configPath)
 	viper.SetConfigFile(".env")
-	viper.SetConfigName("env")
 
 	err := viper.ReadInConfig()
-	if err == nil {
-		log.Print("Config file loaded")
+	if err != nil {
+		log.Printf("Warning: Config file could not be loaded: %v", err)
+		log.Print("Using environment variables only")
+	} else {
+		log.Print("Config file loaded successfully")
 	}
 }

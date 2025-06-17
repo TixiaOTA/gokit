@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/TixiaOTA/gokit/utils/env"
 	"github.com/google/uuid"
@@ -13,7 +14,16 @@ import (
 
 type logger struct{}
 
-var Log *logger
+var (
+	Log  *logger
+	once sync.Once
+)
+
+func init() {
+	once.Do(func() {
+		Log = &logger{}
+	})
+}
 
 func (l *logger) Errorf(ctx context.Context, format string, args ...interface{}) {
 	var (
@@ -21,8 +31,14 @@ func (l *logger) Errorf(ctx context.Context, format string, args ...interface{})
 		file     string
 	)
 
+	if ctx == nil {
+		fmt.Printf("ERROR: %v (nil context)\n", fmt.Sprintf(format, args...))
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
+		fmt.Printf("ERROR: %v (logger not found in context)\n", fmt.Sprintf(format, args...))
 		return
 	}
 
@@ -36,8 +52,11 @@ func (l *logger) Errorf(ctx context.Context, format string, args ...interface{})
 	}
 
 	tmp, ok := value.LoadAndDelete(_LogMessages)
-	if ok {
-		messages = tmp.([]LogMessage)
+	if ok && tmp != nil {
+		existingMessages, ok := tmp.([]LogMessage)
+		if ok {
+			messages = existingMessages
+		}
 	}
 
 	message := LogMessage{
@@ -57,8 +76,14 @@ func (l *logger) Error(ctx context.Context, args ...interface{}) {
 		file     string
 	)
 
+	if ctx == nil {
+		fmt.Printf("ERROR: %v (nil context)\n", fmt.Sprint(args...))
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
+		fmt.Printf("ERROR: %v (logger not found in context)\n", fmt.Sprint(args...))
 		return
 	}
 
@@ -72,8 +97,11 @@ func (l *logger) Error(ctx context.Context, args ...interface{}) {
 	}
 
 	tmp, ok := value.LoadAndDelete(_LogMessages)
-	if ok {
-		messages = tmp.([]LogMessage)
+	if ok && tmp != nil {
+		existingMessages, ok := tmp.([]LogMessage)
+		if ok {
+			messages = existingMessages
+		}
 	}
 
 	message := LogMessage{
@@ -99,8 +127,14 @@ func (l *logger) DebugF(ctx context.Context, format string, args ...interface{})
 		return
 	}
 
+	if ctx == nil {
+		fmt.Printf("DEBUG: %v (nil context)\n", fmt.Sprintf(format, args...))
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
+		fmt.Printf("DEBUG: %v (logger not found in context)\n", fmt.Sprintf(format, args...))
 		return
 	}
 
@@ -114,8 +148,11 @@ func (l *logger) DebugF(ctx context.Context, format string, args ...interface{})
 	}
 
 	tmp, ok := value.LoadAndDelete(_LogMessages)
-	if ok {
-		messages = tmp.([]LogMessage)
+	if ok && tmp != nil {
+		existingMessages, ok := tmp.([]LogMessage)
+		if ok {
+			messages = existingMessages
+		}
 	}
 
 	message := LogMessage{
@@ -141,8 +178,14 @@ func (l *logger) Debug(ctx context.Context, args ...interface{}) {
 		return
 	}
 
+	if ctx == nil {
+		fmt.Printf("DEBUG: %v (nil context)\n", fmt.Sprint(args...))
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
+		fmt.Printf("DEBUG: %v (logger not found in context)\n", fmt.Sprint(args...))
 		return
 	}
 
@@ -156,8 +199,11 @@ func (l *logger) Debug(ctx context.Context, args ...interface{}) {
 	}
 
 	tmp, ok := value.LoadAndDelete(_LogMessages)
-	if ok {
-		messages = tmp.([]LogMessage)
+	if ok && tmp != nil {
+		existingMessages, ok := tmp.([]LogMessage)
+		if ok {
+			messages = existingMessages
+		}
 	}
 
 	message := LogMessage{
@@ -177,8 +223,14 @@ func (l *logger) Printf(ctx context.Context, format string, args ...interface{})
 		file     string
 	)
 
+	if ctx == nil {
+		fmt.Printf("INFO: %v (nil context)\n", fmt.Sprintf(format, args...))
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
+		fmt.Printf("INFO: %v (logger not found in context)\n", fmt.Sprintf(format, args...))
 		return
 	}
 
@@ -192,8 +244,11 @@ func (l *logger) Printf(ctx context.Context, format string, args ...interface{})
 	}
 
 	tmp, ok := value.LoadAndDelete(_LogMessages)
-	if ok {
-		messages = tmp.([]LogMessage)
+	if ok && tmp != nil {
+		existingMessages, ok := tmp.([]LogMessage)
+		if ok {
+			messages = existingMessages
+		}
 	}
 
 	message := LogMessage{
@@ -213,8 +268,14 @@ func (l *logger) Print(ctx context.Context, args ...interface{}) {
 		file     string
 	)
 
+	if ctx == nil {
+		fmt.Printf("INFO: %v (nil context)\n", fmt.Sprint(args...))
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
+		fmt.Printf("INFO: %v (logger not found in context)\n", fmt.Sprint(args...))
 		return
 	}
 
@@ -228,8 +289,11 @@ func (l *logger) Print(ctx context.Context, args ...interface{}) {
 	}
 
 	tmp, ok := value.LoadAndDelete(_LogMessages)
-	if ok {
-		messages = tmp.([]LogMessage)
+	if ok && tmp != nil {
+		existingMessages, ok := tmp.([]LogMessage)
+		if ok {
+			messages = existingMessages
+		}
 	}
 
 	message := LogMessage{
@@ -245,18 +309,22 @@ func (l *logger) Print(ctx context.Context, args ...interface{}) {
 
 // GetRequestId getting request id log from context
 func GetRequestId(ctx context.Context) string {
+	if ctx == nil {
+		return uuid.New().String()
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
 		return uuid.New().String()
 	}
 
 	val, ok := value.Load(RequestId)
-	if !ok {
+	if !ok || val == nil {
 		return uuid.New().String()
 	}
 
 	v, ok := val.(string)
-	if ok {
+	if ok && v != "" {
 		return v
 	}
 
@@ -264,6 +332,10 @@ func GetRequestId(ctx context.Context) string {
 }
 
 func SetSaltKey(ctx context.Context, val string) {
+	if ctx == nil {
+		return
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
 		return
@@ -277,22 +349,28 @@ func SetSaltKey(ctx context.Context, val string) {
 }
 
 func GetSaltKey(ctx context.Context) string {
+	defaultSaltKey := env.GetString("NEW_SALT_KEY")
+
+	if ctx == nil {
+		return defaultSaltKey
+	}
+
 	value, ok := extract(ctx)
 	if !ok {
-		return env.GetString("NEW_SALT_KEY")
+		return defaultSaltKey
 	}
 
 	val, ok := value.Load(_SaltKey)
-	if !ok {
-		return env.GetString("NEW_SALT_KEY")
+	if !ok || val == nil {
+		return defaultSaltKey
 	}
 
 	v, ok := val.(string)
-	if ok && !reflect.ValueOf(v).IsZero() {
+	if ok && v != "" {
 		return v
 	}
 
-	return env.GetString("NEW_SALT_KEY")
+	return defaultSaltKey
 }
 
 func Red(val interface{}) {
