@@ -30,4 +30,6 @@ type CacheClient interface {
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 	Keys(ctx context.Context, pattern string) *redis.StringSliceCmd
+	SMembers(ctx context.Context, key string) *redis.StringSliceCmd
+	SAdd(ctx context.Context, key string, members ...interface{}) *redis.IntCmd
 }
